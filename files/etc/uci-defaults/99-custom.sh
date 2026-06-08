@@ -43,12 +43,16 @@ echo "Board detected: $board_name" >>$LOGFILE
 
 wan_ifname=""
 lan_ifnames=""
-# 此处特殊处理个别开发板网口顺序问题
-# 固定 eth0 为 WAN，其余网口为 LAN
-wan_ifname="eth0"
-lan_ifnames=$(echo "$ifnames" | tr ' ' '\n' | grep -v '^eth0$' | xargs)
 
-echo "Using custom mapping: WAN=$wan_ifname LAN=$lan_ifnames" >>"$LOGFILE"
+# 强制指定 WAN 口为 eth1，其余物理网口作为 LAN
+wan_ifname="eth1"
+for port in $ifnames; do
+    if [ "$port" != "$wan_ifname" ]; then
+        lan_ifnames="$lan_ifnames $port"
+    fi
+done
+lan_ifnames=$(echo "$lan_ifnames" | awk '{$1=$1};1')
+echo "Using forced mapping: WAN=$wan_ifname LAN=$lan_ifnames" >>"$LOGFILE"
 
 # 3. 配置网络
 if [ "$count" -eq 1 ]; then
